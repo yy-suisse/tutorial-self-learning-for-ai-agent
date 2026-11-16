@@ -1,0 +1,29 @@
+local:
+  base_url: http://localhost:11434/v1
+  api_key_env: null          # no key needed
+  model: qwen2.5:7b
+  is_local: true
+
+local_tools:
+  base_url: http://localhost:11434/v1
+  api_key_env: null
+  model: qwen3.5
+  is_local: true
+
+openrouter_free:
+  base_url: https://openrouter.ai/api/v1
+  api_key_env: OPENROUTER_API_KEY
+  model: PASTE_SLUG_HERE:free     # copy from openrouter.ai/models
+  is_local: false
+
+openrouter_paid:
+  base_url: https://openrouter.ai/api/v1
+  api_key_env: OPENROUTER_API_KEY
+  model: PASTE_SLUG_HERE          # format: provider/model-name
+  is_local: false
+
+openai:
+  base_url: https://api.openai.com/v1
+  api_key_env: OPENAI_API_KEY
+  model: PASTE_MODEL_NAME_HERE
+  is_local: false

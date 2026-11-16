@@ -1,0 +1,27 @@
+{
+ "request": "I want RCTs on \"kidney transplant\" [70536003].",
+ "terms": [
+  {
+   "key": "c1",
+   "term": "kidney transplant",
+   "id": "70536003"
+  }
+ ],
+ "tree": "c1",
+ "filters": [
+  "RCT"
+ ],
+ "chosen": {
+  "c1": [
+   "D016030"
+  ]
+ },
+ "blocks": {
+  "c1": "(\"Kidney Transplantation\"[Mesh] OR \"kidney transplant\"[tiab])"
+ },
+ "query": "(\"Kidney Transplantation\"[Mesh] OR \"kidney transplant\"[tiab]) AND randomized controlled trial[pt]",
+ "counts": {
+  "kidney transplant": 122158,
+  "TOTAL": 3155
+ }
+}

@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentic AI loop: map and details</title>
+<style>
+  :root { --fg:#1d1d1f; --muted:#6b6b70; --line:#8a8a90; --card:#fff; --bg:#f6f6f4; --accent:#2b6cb0; --warn:#b7791f; --ok:#2f855a; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fg:#ececec; --muted:#a0a0a8; --line:#77777f; --card:#26262a; --bg:#18181b; --accent:#63b3ed; --warn:#f6ad55; --ok:#68d391; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--fg); line-height:1.45; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 80px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 0 0 8px; }
+  p.hint { color: var(--muted); font-size: 13px; margin: 0 0 18px; }
+  a { color: var(--accent); }
+  code, pre { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; }
+  pre { background: var(--card); border:1px solid var(--line); border-radius:8px; padding:10px; overflow-x:auto; margin:8px 0; }
+
+  /* Diagram */
+  .map { display:grid; grid-template-columns: 1fr 200px; gap:14px; align-items:start; }
+  .map svg { max-width:100%; height:auto; display:block; }
+  .map svg text { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  .map svg .t  { font-size:13px; font-weight:600; fill:currentColor; }
+  .map svg .s  { font-size:10.5px; fill:var(--muted); font-family:ui-monospace, Consolas, monospace; }
+  .map svg .lb { font-size:11px; fill:var(--muted); }
+  .map svg .nd { fill:var(--card); stroke:var(--line); stroke-width:1.3; }
+  .map svg a:hover .nd { stroke:var(--accent); stroke-width:2; }
+  .map svg a text { text-decoration:none; }
+  .loop { display:flex; flex-direction:column; align-items:stretch; gap:6px; }
+  .box { display:block; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 12px; text-decoration:none; color:var(--fg); }
+  .box:hover { border-color: var(--accent); }
+  .box b { display:block; font-size:14px; }
+  .box span { font-size:12px; color:var(--muted); }
+  .box.decision { border-color: var(--warn); }
+  .box.final { border-color: var(--ok); }
+  .down { text-align:center; color:var(--line); font-size:16px; line-height:1; }
+  .split { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+  .side h3 { font-size:12px; color:var(--muted); margin:0 0 6px; text-transform:uppercase; letter-spacing:.04em; }
+  .side .box { margin-bottom:8px; padding:8px 10px; }
+  .side .box b { font-size:13px; }
+
+  /* Pattern cards */
+  .patterns { margin-top: 30px; }
+  .pgrid { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px; }
+  .pcard { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; font-size:12.5px; }
+  .pcard h3 { font-size:14px; margin:0 0 8px; }
+  .pcard h3 a { text-decoration:none; }
+  .fbox { border:1px solid var(--line); border-radius:7px; padding:4px 8px; margin:3px 0; }
+  .fbox.base { border-color: var(--accent); color: var(--accent); font-weight:600; }
+  .fbox.llm { border-style: dashed; }
+  .farrow { color:var(--muted); font-size:11.5px; padding-left:8px; }
+  .pnote { color:var(--muted); font-size:11.5px; margin:6px 0 0; }
+  .plugtable { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+  .plugtable th, .plugtable td { border:1px solid var(--line); padding:5px 8px; text-align:left; }
+  .plugtable th { font-size:12px; color:var(--muted); }
+  @media (max-width: 640px) { .pgrid { grid-template-columns: 1fr; } }
+
+  /* Message timeline */
+  .msgs { margin-top: 30px; }
+  .turnlab { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin:14px 0 4px; }
+  .msg { border:1px solid var(--line); border-left-width:4px; border-radius:7px; padding:5px 9px; margin:4px 0; font-size:12px; font-family:ui-monospace, Consolas, monospace; background:var(--card); overflow-x:auto; white-space:nowrap; }
+  .msg.wrap { white-space:normal; }
+  .m-sys  { border-left-color:#9f7aea; }
+  .m-user { border-left-color:var(--warn); }
+  .m-asst { border-left-color:var(--accent); }
+  .m-tool { border-left-color:var(--ok); }
+  .legend { font-size:12px; color:var(--muted); margin:8px 0 0; }
+  .legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin:0 4px 0 12px; vertical-align:middle; }
+  .rules { font-size:13.5px; margin:10px 0 0; padding-left:20px; }
+  .rules li { margin:4px 0; }
+  .bad { color:#c53030; font-weight:600; }
+  @media (prefers-color-scheme: dark) { .bad { color:#fc8181; } }
+
+  /* Turn anatomy */
+  .cases { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin: 6px 0 0; }
+  .case { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13px; }
+  .case h3 { font-size:13px; margin:0 0 6px; }
+  .case ol { margin:0; padding-left:18px; }
+
+  /* Detail sections */
+  section.detail { display:none; background:var(--card); border:1px solid var(--accent); border-radius:12px; padding:16px; margin-top:22px; }
+  section.detail:target { display:block; }
+  section.detail ul { margin: 6px 0; padding-left: 20px; }
+  section.detail li { margin: 3px 0; font-size: 14px; }
+  .src { font-size:12px; color:var(--muted); margin-top:10px; }
+  .back { font-size:12px; display:inline-block; margin-top:10px; }
+  .intro { font-size:14px; }
+  .note { font-size:13px; color:var(--muted); margin-top:26px; }
+
+  @media (max-width: 640px) {
+    .map { grid-template-columns: 1fr; }
+    .cases { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Agentic AI loop: map</h1>
+  <p class="hint">Click any box to open its details below. Each box is one step of the loop or one feature around it.</p>
+
+  <div class="map">
+    <figure style="margin:0">
+      <svg viewBox="0 0 520 572" role="img" aria-label="The base agent loop: LLM call, branch on tool_calls; yes: append assistant reply, run tools, append tool results, loop back for the next turn; no: return the final answer from reply.content.">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- arrows -->
+        <g fill="none" stroke="currentColor" stroke-width="1.3">
+          <line x1="260" y1="64"  x2="260" y2="85"  marker-end="url(#arr)"/>
+          <line x1="260" y1="150" x2="260" y2="173" marker-end="url(#arr)"/>
+          <line x1="386" y1="217" x2="395" y2="217" marker-end="url(#arr)"/>
+          <line x1="260" y1="258" x2="260" y2="281" marker-end="url(#arr)"/>
+          <line x1="260" y1="338" x2="260" y2="361" marker-end="url(#arr)"/>
+          <line x1="260" y1="430" x2="260" y2="455" marker-end="url(#arr)"/>
+          <path d="M 85 486 H 46 V 119 H 103" marker-end="url(#arr)"/>
+        </g>
+        <text class="lb" x="390" y="207" text-anchor="middle">no</text>
+        <text class="lb" x="250" y="274" text-anchor="end">yes</text>
+        <text class="lb" transform="translate(34,302) rotate(-90)" text-anchor="middle">next turn · up to MAX_TURNS</text>
+
+        <!-- START -->
+        <rect class="nd" x="130" y="12" width="260" height="52" rx="10"/>
+        <text class="t" x="260" y="34" text-anchor="middle">START</text>
+        <text class="s" x="260" y="51" text-anchor="middle">messages = [system, user(task)]</text>
+
+        <!-- 1 LLM call -->
+        <a href="#llm">
+          <rect class="nd" x="110" y="88" width="300" height="62" rx="10"/>
+          <rect x="117" y="96" width="4" height="46" rx="2" fill="var(--accent)"/>
+          <text class="t" x="130" y="110">1 · LLM call</text>
+          <text class="s" x="130" y="128">reply = LLM(messages, tools)</text>
+          <text class="lb" x="130" y="143">the model re-reads the whole list every turn</text>
+        </a>
+
+        <!-- decision -->
+        <a href="#turn">
+          <polygon class="nd" points="260,176 384,217 260,258 136,217" style="stroke:var(--warn)"/>
+          <text class="t" x="260" y="221" text-anchor="middle" style="font-size:12.5px">reply has tool_calls?</text>
+        </a>
+
+        <!-- final -->
+        <a href="#turn">
+          <rect class="nd" x="398" y="186" width="114" height="62" rx="10" style="stroke:var(--ok)"/>
+          <text class="t" x="455" y="206" text-anchor="middle" style="font-size:12px">4 · Final answer</text>
+          <text class="s" x="455" y="224" text-anchor="middle">return</text>
+          <text class="s" x="455" y="238" text-anchor="middle">reply.content</text>
+        </a>
+        <text class="lb" x="455" y="262" text-anchor="middle">nothing appended</text>
+
+        <!-- 2 append assistant -->
+        <a href="#turn">
+          <rect class="nd" x="85" y="284" width="350" height="54" rx="10"/>
+          <rect x="92" y="292" width="4" height="38" rx="2" fill="var(--accent)"/>
+          <text class="t" x="105" y="305">2 · append the assistant reply</text>
+          <text class="s" x="105" y="324">role:"assistant" — holds tool_calls (args = JSON string)</text>
+        </a>
+
+        <!-- 3 run tools -->
+        <a href="#tool">
+          <rect class="nd" x="85" y="364" width="350" height="66" rx="10"/>
+          <text class="t" x="105" y="384">3 · run every requested call</text>
+          <text class="s" x="105" y="402">json.loads(args) → registry[name](**args) → str(result)</text>
+        </a>
+        <a href="#errors">
+          <text class="s" x="105" y="419" style="fill:var(--accent)">any failure → "ERROR: …" string, the loop never crashes</text>
+        </a>
+
+        <!-- 4 append tool results -->
+        <a href="#turn">
+          <rect class="nd" x="85" y="458" width="350" height="54" rx="10"/>
+          <rect x="92" y="466" width="4" height="38" rx="2" fill="var(--ok)"/>
+          <text class="t" x="105" y="479">append one tool message per call</text>
+          <text class="s" x="105" y="497">role:"tool", tool_call_id=call.id, content=&lt;string&gt;</text>
+        </a>
+
+        <!-- legend -->
+        <rect x="85"  y="538" width="10" height="10" rx="2" fill="var(--warn)"/>
+        <text class="lb" x="100" y="547">decision</text>
+        <rect x="165" y="538" width="10" height="10" rx="2" fill="var(--accent)"/>
+        <text class="lb" x="180" y="547">assistant append</text>
+        <rect x="290" y="538" width="10" height="10" rx="2" fill="var(--ok)"/>
+        <text class="lb" x="305" y="547">tool append / final</text>
+      </svg>
+      <figcaption class="hint" style="margin-top:6px">One pass down the left column = one turn. Every box links to its details below.</figcaption>
+    </figure>
+
+    <div class="side">
+      <h3>Around the loop</h3>
+      <a class="box" href="#context"><b>Context</b><span>summary + recent steps</span></a>
+      <a class="box" href="#memory"><b>Memory</b><span>JSON file across runs</span></a>
+      <a class="box" href="#plan"><b>Planning</b><span>plan → execute → synthesize</span></a>
+      <a class="box" href="#recovery"><b>Recovery</b><span>retry limit, critic</span></a>
+      <a class="box" href="#parallel"><b>Parallel calls</b><span>gather + semaphore</span></a>
+      <a class="box" href="#guard"><b>Guardrails</b><span>validate, confirm, audit</span></a>
+      <a class="box" href="#observe"><b>Tracing</b><span>one event per step</span></a>
+      <a class="box" href="#multi"><b>Multi-agent</b><span>sub-agent = a tool</span></a>
+      <a class="box" href="#mcp"><b>MCP</b><span>tools from a separate server</span></a>
+    </div>
+  </div>
+
+  <div class="patterns">
+    <h2>Plug-in patterns: how the base loop composes</h2>
+    <p class="hint">The base loop (boxes 1–4 above) is the elementary unit. Each pattern wraps it or changes one line inside it. <span style="color:var(--accent); font-weight:600">BASE LOOP</span> marks where the unchanged loop runs.</p>
+
+    <div class="pgrid">
+      <div class="pcard">
+        <h3><a href="#plan">Planning: plan → execute → synthesize</a></h3>
+        <div class="fbox llm">Planner LLM — one call, <b>no tools</b>. Prompt: "break the task into an ordered JSON list"</div>
+        <div class="farrow">↓ json.loads → [subtask 1 … n] (parse fails → plan = [task])</div>
+        <div class="fbox">for each subtask, in order:</div>
+        <div class="fbox base">BASE LOOP — fresh messages, sees only its own subtask text</div>
+        <div class="farrow">↓ collect results[i] (each is a string)</div>
+        <div class="fbox llm">Synthesizer LLM — one call, no tools: task + all results → final answer</div>
+        <p class="pnote">Subtasks are isolated: safe only if independent. Dependencies need depends_on + passing earlier results in.</p>
+      </div>
+
+      <div class="pcard">
+        <h3><a href="#recovery">Critic: generate → judge → revise</a></h3>
+        <div class="fbox base">BASE LOOP → answer</div>
+        <div class="farrow">↓ answer only — the critic never sees the loop's reasoning or tool calls</div>
+        <div class="fbox llm">Critic LLM — <b>fresh context</b>: task + answer, no tools, no history → pass / fail + feedback</div>
+        <div class="farrow">↓ pass → return answer &nbsp;|&nbsp; fail ↓</div>
+        <div class="fbox">append to the <b>agent's</b> messages: assistant(answer), user("Reviewer found: … Revise.")</div>
+        <div class="fbox base">BASE LOOP revises (same agent, same tools, same history)</div>
+        <p class="pnote">Bounded by MAX_REFLECTION_ROUNDS; the last revision is returned unchecked. Critic JSON that fails to parse counts as pass.</p>
+      </div>
+
+      <div class="pcard">
+        <h3><a href="#parallel">Parallel calls: inside one turn</a></h3>
+        <div class="fbox llm">reply arrives with k tool_calls (k ≥ 1)</div>
+        <div class="fbox">append the assistant message (all k calls) <b>first</b></div>
+        <div class="farrow">↓ start all k together</div>
+        <div class="fbox">await asyncio.gather(execute(c) for c in calls) — semaphore caps concurrency</div>
+        <div class="farrow">↓ k results, in request order (zip pairs result ↔ call.id)</div>
+        <div class="fbox">append k tool messages → next turn</div>
+        <p class="pnote">Changes only the tool-execution lines. Turns stay sequential; time ≈ slowest call, not the sum. Only helps for I/O-bound tools.</p>
+      </div>
+
+      <div class="pcard">
+        <h3><a href="#multi">Multi-agent: a tool is another loop</a></h3>
+        <div class="fbox base">Orchestrator BASE LOOP — tools = delegate_to_researcher, delegate_to_writer</div>
+        <div class="farrow">↓ a tool call starts a sub-agent</div>
+        <div class="fbox base">Researcher BASE LOOP — own prompt, own registry: search, calculate</div>
+        <div class="fbox base">Writer BASE LOOP — own prompt, <b>no tools</b></div>
+        <div class="farrow">↓ only the final string returns, as an ordinary tool result</div>
+        <div class="fbox">orchestrator appends assistant(tool_calls) + tool(result), loops on</div>
+        <p class="pnote">Each agent sees only its own tool registry and its own messages. Sub-agents have no delegate tools, so depth stays at 2.</p>
+      </div>
+    </div>
+
+    <table class="plugtable">
+      <tr><th>Pattern</th><th>Where it plugs into the base loop</th><th>What changes</th></tr>
+      <tr><td><a href="#plan">Planning</a></td><td>Wraps around it (before + after)</td><td>Loop runs once per subtask; planner and synthesizer are extra tool-free LLM calls</td></tr>
+      <tr><td><a href="#recovery">Critic</a></td><td>Wraps after it</td><td>Loop reruns with feedback appended as a user message</td></tr>
+      <tr><td><a href="#parallel">Parallel</a></td><td>Inside one turn</td><td>The for-loop over tool_calls becomes gather</td></tr>
+      <tr><td><a href="#multi">Multi-agent</a></td><td>Inside a tool</td><td>One tool function runs a whole sub-loop and returns its final text</td></tr>
+      <tr><td><a href="#context">Context</a></td><td>Before each LLM call</td><td>messages is rebuilt from summary + recent steps</td></tr>
+      <tr><td><a href="#memory">Memory</a></td><td>As ordinary tools</td><td>read_memory / remember / forget touch a JSON file</td></tr>
+      <tr><td><a href="#guard">Guardrails</a></td><td>Inside execute_tool_call</td><td>validate → confirm → execute → audit</td></tr>
+      <tr><td><a href="#observe">Tracing</a></td><td>Around LLM call and tool call</td><td>One event recorded per call; loop unchanged</td></tr>
+    </table>
+  </div>
+
+  <div class="msgs">
+    <h2>How <code>messages</code> evolves, turn by turn</h2>
+    <p class="hint">Worked example: "What is (438 × 12 − 57) / 3?" with a calculate tool. <b>+</b> marks what that turn appends. The list only grows, and the LLM re-reads all of it on every call (until context management compresses it).</p>
+
+    <div class="turnlab">Start — 2 messages</div>
+    <div class="msg m-sys">{role: "system", content: "You are an agent. Use the tools when needed."}</div>
+    <div class="msg m-user">{role: "user", content: "What is (438*12 - 57) / 3? Give just the number."}</div>
+
+    <div class="turnlab">Turn 1 — LLM sees 2 messages → reply HAS tool_calls → append 2 → 4 messages</div>
+    <div class="msg m-asst"><b>+</b> {role: "assistant", content: null, tool_calls: [{id: "c1", function: {name: "calculate", arguments: '{"expression": "((438*12)-57)/3"}'}}]}</div>
+    <div class="msg m-tool"><b>+</b> {role: "tool", tool_call_id: "c1", content: "1733.0"}</div>
+
+    <div class="turnlab">Turn 2 — LLM sees 4 messages → reply has NO tool_calls → return, append nothing</div>
+    <div class="msg m-asst">{role: "assistant", content: "1733"} &nbsp;← the answer is in content; the loop returns it</div>
+
+    <p class="legend">Role colors: <i style="background:#9f7aea"></i>system <i style="background:var(--warn)"></i>user <i style="background:var(--accent)"></i>assistant <i style="background:var(--ok)"></i>tool</p>
+
+    <ul class="rules">
+      <li><b>Assistant reply with tool_calls:</b> appended as-is. Its <code>content</code> is often <code>null</code> — the "action" lives in <code>tool_calls</code>, and the arguments are a JSON <i>string</i>.</li>
+      <li><b>One <code>tool</code> message per <code>tool_call_id</code></b>, content always a string — even for errors ("ERROR: …") and skipped calls ("SKIPPED: …"). An unanswered id makes the API reject the next call.</li>
+      <li><b>Final assistant reply:</b> no tool_calls, answer in <code>content</code>. Nothing more needs appending — the loop returns. Tool results never move into <code>content</code>; they stay in the <code>tool</code> messages, and the model rewrites the answer from them.</li>
+      <li><b>In a no-tools loop (module 1):</b> the turn appends the assistant text, then a user "Continue…" nudge — that user message plays the role the tool result plays here: new input that drives the next turn.</li>
+    </ul>
+  </div>
+
+  <div class="msgs">
+    <h2>Trap: one tool needs another tool's result</h2>
+    <p class="hint">All tool_calls in a reply are written <b>before any result exists</b>. If tool B's argument depends on tool A's result, the model can only guess it. Example from the MCP tutorial (word_count, then add):</p>
+
+    <div class="msg m-asst wrap"><b>+</b> {role: "assistant", tool_calls: [ {id:"c1", word_count(text:"…")}, {id:"c2", add(a: <span class="bad">0 ← guessed</span>, b: 5)} ]}</div>
+    <div class="msg m-tool"><b>+</b> {role: "tool", tool_call_id: "c1", content: "42"}</div>
+    <div class="msg m-tool wrap"><b>+</b> {role: "tool", tool_call_id: "c2", content: "5"} &nbsp;<span class="bad">← valid-looking but wrong: built from the guess</span></div>
+
+    <ul class="rules">
+      <li><b>Independent calls in one reply are fine</b> — that is exactly what parallel calling is for.</li>
+      <li><b>Dependent calls must span two turns:</b> call A → append its result → the LLM reads it → call B. A large model usually does this by itself; a small model often emits both calls at once and guesses.</li>
+      <li><b>Defense 1 — prompt:</b> "Call one tool at a time. Wait for its result before deciding the next call." A prompt is a request, not enforcement.</li>
+      <li><b>Defense 2 — code constraint:</b> execute only the <i>first</i> call of the reply; answer every other call with "SKIPPED: one tool per turn, call it again after seeing this result." Every tool_call_id still gets its tool message.</li>
+      <li><b>Defense 3 — API flag:</b> <code>parallel_tool_calls=False</code> where supported (it had no effect on the local Ollama server in the tutorial — hence defense 2).</li>
+      <li><b>Why validation doesn't save you:</b> it checks types, not values. A guessed <code>a=0</code> is a perfectly valid number. Only sequencing fixes this.</li>
+    </ul>
+    <p class="src">Source: tuto/13_mcp_exampe.ipynb · tuto/8_parallel_tool_calling.py</p>
+  </div>
+
+  <section id="turn" class="detail">
+    <h2>What gets appended each turn</h2>
+    <p class="intro">Only the reply's <code>tool_calls</code> decide which case you are in.</p>
+    <div class="cases">
+      <div class="case">
+        <h3>Case A: reply has tool_calls</h3>
+        <ol>
+          <li>Append the reply (role <code>assistant</code>, with <code>tool_calls</code>).</li>
+          <li>For each call, append one <code>tool</code> message with the same <code>tool_call_id</code>.</li>
+          <li>Loop back. The LLM now sees the results.</li>
+        </ol>
+      </div>
+      <div class="case">
+        <h3>Case B: no tool_calls</h3>
+        <ol>
+          <li>Nothing else is appended.</li>
+          <li>Return <code>message.content</code> as the final answer.</li>
+        </ol>
+      </div>
+    </div>
+    <p class="intro"><b>Tool results are never inside <code>message.content</code>.</b> They sit in the <code>tool</code> messages. The final text is the model's summary of them, so it may not cover every result.</p>
+    <p class="src">Source: <a href="https://github.com/jiminelee/agent-harness-course/blob/main/module01/module01_agent_loop.py">module01_agent_loop.py</a> · notes.md, quick reference</p>
+    <a class="back" href="#">Back to map</a>
+  </section>
+
+  <section id="llm" class="detail">
+    <h2>1. LLM call</h2>
+    <ul>
+      <li>The model sees the whole <code>messages</code> list and the <code>tools</code> schema every turn.</li>
+      <li>The reply is an object: <code>content</code> (text) and optionally <code>tool_calls</code>.</li>
+    </ul>
+    <pre>reply = client.chat.completions.create(model=MODEL, messages=messages, tools=TOOLS_SCHEMA)
+message = reply.choices[0].message</pre>
+    <p class="src">Source: tuto/0_baseline_llm_call.ipynb, tuto/1_minimal_agent_loop.ipynb</p>
+    <a class="back" href="#">Back to map</a>
+  </section>
+
+  <section id="tool" class="detail">
+    <h2>2. Running a tool call</h2>
+    <ul>
+      <li>The arguments arrive as a JSON string.</li>
+      <li><code>json.loads</code> turns it into a dict; <code>fn(**args)</code> runs the function.</li>
+      <li>Convert the return value to a string, then append it as a <code>tool</code> message.</li>
+    </ul>
+    <pre>args = json.loads(call.function.arguments)    # JSON string → dict
+result = TOOL_REGISTRY[name](**args)          # dict → Python call
+messages.append({"role": "tool",
+                 "tool_call_id": call.id,
+                 "content": str(result)})     # → string</pre>
+    <p class="src">Source: tuto/2_single_tool.ipynb, tuto/3_tool_call_full.ipynb</p>
+    <a class="back" href="#">Back to map</a>
+  </section>
+
+  <section id="errors" class="detail">
+    <h2>3. Errors become strings</h2>
+    <ul>
+      <li><code>execute_tool_call</code> never raises. The model reads the error and can try again.</li>
+      <li>Unknown tool, bad JSON, bad arguments, and a crash inside the tool each return their own message.</li>
+      <li>Caveat: a <code>TypeError</code> raised inside the tool body looks like bad arguments. Check with <code>inspect.signature(fn).bind(**args)</code> first.</li>
+    </ul>
+    <pre>fn = TOOL_REGISTRY.get(name)
+if fn is None:                     return "ERROR: unknown tool"
+try: args = json.loads(call.arguments)
+except JSONDecodeError:           return "ERROR: could not parse arguments as JSON"
+try:  return str(fn(**args))
+except TypeError:                  return "ERROR: invalid arguments"
+except Exception:                  return "ERROR: tool raised an exception"</pre>
+    <p class="src">Source: tuto/3_tool_call_full.ipynb, tuto/7_error_handling.ipynb</p>
+    <a class="back" href="#">Back to map</a>
+  </section>
+
+  <section id="context" class="detail">
+    <h2>Context management</h2>
+    <ul>
+      <li><b>system</b> and <b>task</b> stay fixed.</li>
+      <li><b>summary</b> holds older steps, rewritten by an LLM call.</li>
+      <li><b>recent_steps</b> keeps the last K steps word for word.</li>
+      <li>Each turn: compress old steps, build the messages, call the LLM.</li>
+    </ul>
+    <pre>messages = [system, user(task)]
++ [summary]            if any
++ flatten(recent_steps)</pre>
+    <p class="src">Source: tuto/4_context_management.ipynb</p>
+    <a class="back" href="#">Back to map</a>
+  </section>
+
+  <section id="memory" class="detail">
+    <h2>Persistent memory</h2>
+    <ul>
+      <li>Facts live in a JSON file (<code>key → fact</code>). Each run starts fresh; only the file carries over.</li>
+      <li>Tools: <code>read_memory</code>, <code>remember</code>, <code>forget</code>.</li>
+      <li>Writes go to a temp file, then replace the old one, so a crash cannot corrupt it.</li>
+    </ul>
+    <p class="src">Source: tuto/5_persistant_memory.py, tuto/5_persistant_memory.ipynb</p>
+    <a class="back" href="#">Back to map</a>
+  </section>
+
+  <section id="plan" class="detail">
+    <h2>Planning</h2>
+    <ul>
+      <li><b>Plan:</b> one LLM call, no tools, returns a JSON list of subtasks.</li>
+      <li><b>Execute:</b> each subtask runs its own small tool loop.</li>
+      <li><b>Synthesize:</b> one LLM call combines the results.</li>
+      <li>Real systems add <code>depends_on</code> and run independent steps in parallel.</li>
+    </ul>
+    <p class="src">Source: tuto/6_plan.ipynb</p>
+    <a class="back" href="#">Back to map</a>
+  </section>
+
+  <section id="recovery" class="detail">
+    <h2>Error recovery and reflection</h2>
+    <ul>
+      <li><b>Retry limit:</b> after N consecutive <code>ERROR:</code> results for one tool, block that tool.</li>
+      <li><b>Critic:</b> a fresh LLM call (task + answer, no tools) returns pass or fail. On fail, its feedback goes back to the agent.</li>
+      <li>Every loop has a cap (turns, failures, reflection rounds).</li>
+    </ul>
+    <p class="src">Source: tuto/7_error_handling.ipynb</p>
+    <a class="back" href="#">Back to map</a>
+  </section>
+
+  <section id="parallel" class="detail">
+    <h2>Parallel tool calls</h2>
+    <ul>
+      <li>Calls in one reply run together with <code>asyncio.gather</code>. Results keep the request order.</li>
+      <li>An <code>asyncio.Semaphore</code> caps how many run at once.</li>
+      <li>Append the assistant message with all <code>tool_calls</code> first, then one <code>tool</code> message per call.</li>
+      <li>Only helps when tools wait on I/O. The loop stays sequential across turns.</li>
+    </ul>
+    <pre>results = await asyncio.gather(*(execute_tool_call(c) for c in reply.tool_calls))
+for call, result in zip(reply.tool_calls, results):
+    messages.append({"role": "tool", "tool_call_id": call.id, "content": result})</pre>
+    <p class="src">Source: tuto/8_parallel_tool_calling.py</p>
+    <a class="back" href="#">Back to map</a>
+  </section>
+
+  <section id="guard" class="detail">
+    <h2>Guardrails</h2>
+    <ul>
+      <li>Three layers in code, not in the prompt: <b>validate</b> arguments, <b>confirm</b> dangerous tools with a human, <b>audit</b> every attempt.</li>
+      <li>The developer sets <code>dangerous=True</code>. The LLM never sees this flag.</li>
+      <li>A denial goes back to the model as a normal <code>tool</code> message.</li>
+    </ul>
+    <p class="src">Source: tuto/9_guardrail.py</p>
+    <a class="back" href="#">Back to map</a>
+  </section>
+
+  <section id="observe" class="detail">
+    <h2>Observability</h2>
+    <ul>
+      <li>A <code>Tracer</code> records one <code>llm_call</code> per turn and one <code>tool_call</code> per requested tool.</li>
+      <li>Each event has a step, a type, a duration, and an <code>is_error</code> flag.</li>
+      <li>Use it to see whether slowness came from the model or from a tool.</li>
+    </ul>
+    <p class="src">Source: tuto/10_observabilityy.py, tuto/agent_trace.json</p>
+    <a class="back" href="#">Back to map</a>
+  </section>
+
+  <section id="multi" class="detail">
+    <h2>Multi-agent</h2>
+    <ul>
+      <li>A sub-agent is a whole loop wrapped in a function. The orchestrator calls it like a tool.</li>
+      <li>Each agent has its own prompt, tools, and messages. Only the final text comes back.</li>
+      <li>Sub-agents have no delegate tools, so the depth stays at two.</li>
+    </ul>
+    <p class="src">Source: <a href="https://github.com/jiminelee/agent-harness-course/blob/main/module11/module11_multi_agent.py">module11_multi_agent.py</a> · tuto/11_multiagtens.py</p>
+    <a class="back" href="#">Back to map</a>
+  </section>
+
+  <section id="mcp" class="detail">
+    <h2>MCP (Model Context Protocol)</h2>
+    <ul>
+      <li>MCP tools run in a separate server process. The agent is the client.</li>
+      <li>Steps: start the server, <code>initialize()</code>, <code>list_tools()</code>, convert to the LLM schema.</li>
+      <li>In the loop, only the tool-running line changes: <code>await session.call_tool(name, args)</code>.</li>
+      <li>Check <code>is_error</code>. A failed call returns text, not an exception.</li>
+    </ul>
+    <p class="src">Source: tuto/13_mcp_exampe.ipynb, tuto/13_mcp_server.py</p>
+    <a class="back" href="#">Back to map</a>
+  </section>
+
+  <p class="note">Full notes: notes.md in the agent_ai\tuto folder. This page is also saved as agent_loop_guide.html in the agent_ai folder.</p>
+</main>
+</body>
+</html>

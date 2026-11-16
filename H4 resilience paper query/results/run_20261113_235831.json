@@ -1,0 +1,189 @@
+{
+ "request": "I want papers that study ('resilience' or 'protective mechanism')\nfor 'solid organ transplant patients'[313039003] \nthat report at least one of these laboratory measurements: \n('C-reactive protein'[55235003] or 'albumin' [999997] \nor 'interleukin-6' or 'neutrophil-to-lymphocyte ratio' \nor 'lymphocyte count' or 'hemoglobin' or 'cortisol').\nPlease exclude papers that study 'pediatric' or 'children' or 'adolescent' or 'teenager'.\n",
+ "terms": [
+  {
+   "key": "c1",
+   "term": "resilience",
+   "id": null
+  },
+  {
+   "key": "c2",
+   "term": "protective mechanism",
+   "id": null
+  },
+  {
+   "key": "c3",
+   "term": "solid organ transplant patients",
+   "id": "313039003"
+  },
+  {
+   "key": "c4",
+   "term": "C-reactive protein",
+   "id": "55235003"
+  },
+  {
+   "key": "c5",
+   "term": "albumin",
+   "id": null
+  },
+  {
+   "key": "c6",
+   "term": "interleukin-6",
+   "id": null
+  },
+  {
+   "key": "c7",
+   "term": "neutrophil-to-lymphocyte ratio",
+   "id": null
+  },
+  {
+   "key": "c8",
+   "term": "lymphocyte count",
+   "id": null
+  },
+  {
+   "key": "c9",
+   "term": "hemoglobin",
+   "id": null
+  },
+  {
+   "key": "c10",
+   "term": "cortisol",
+   "id": null
+  },
+  {
+   "key": "c11",
+   "term": "pediatric",
+   "id": null
+  },
+  {
+   "key": "c12",
+   "term": "children",
+   "id": null
+  },
+  {
+   "key": "c13",
+   "term": "adolescent",
+   "id": null
+  },
+  {
+   "key": "c14",
+   "term": "teenager",
+   "id": null
+  }
+ ],
+ "tree": {
+  "and": [
+   {
+    "or": [
+     "c1",
+     "c2"
+    ]
+   },
+   "c3",
+   {
+    "or": [
+     "c4",
+     "c5",
+     "c6",
+     "c7",
+     "c8",
+     "c9",
+     "c10"
+    ]
+   },
+   {
+    "not": {
+     "or": [
+      "c11",
+      "c12",
+      "c13",
+      "c14"
+     ]
+    }
+   }
+  ]
+ },
+ "filters": [],
+ "chosen": {
+  "c1": [],
+  "c2": [],
+  "c3": [],
+  "c4": [
+   "D002097"
+  ],
+  "c5": [
+   "D012709",
+   "D000075462"
+  ],
+  "c6": [
+   "D015850",
+   "D019947"
+  ],
+  "c7": [],
+  "c8": [
+   "D018655",
+   "D018791"
+  ],
+  "c9": [
+   "D006441",
+   "D006444",
+   "D006446",
+   "D006447",
+   "D006448",
+   "D006449"
+  ],
+  "c10": [],
+  "c11": [
+   "D010372",
+   "D000070316",
+   "D015278",
+   "D006776"
+  ],
+  "c12": [
+   "D032721"
+  ],
+  "c13": [
+   "D000293",
+   "D000067697",
+   "D000295",
+   "D000296",
+   "D063588"
+  ],
+  "c14": []
+ },
+ "blocks": {
+  "c1": "(\"resilience\"[tiab])",
+  "c2": "(\"protective mechanism\"[tiab])",
+  "c3": "(\"solid organ transplant patients\"[tiab])",
+  "c4": "(\"C-Reactive Protein\"[Mesh] OR \"C-reactive protein\"[tiab])",
+  "c5": "(\"Serum Albumin\"[Mesh] OR \"Serum Albumin, Human\"[Mesh] OR \"albumin\"[tiab])",
+  "c6": "(\"Interleukin-6\"[Mesh] OR \"Receptors, Interleukin-6\"[Mesh] OR \"interleukin-6\"[tiab])",
+  "c7": "(\"neutrophil-to-lymphocyte ratio\"[tiab])",
+  "c8": "(\"Lymphocyte Count\"[Mesh] OR \"CD4 Lymphocyte Count\"[Mesh] OR \"lymphocyte count\"[tiab])",
+  "c9": "(\"Hemoglobin A\"[Mesh] OR \"Hemoglobin C\"[Mesh] OR \"Hemoglobin E\"[Mesh] OR \"Hemoglobin H\"[Mesh] OR \"Hemoglobin J\"[Mesh] OR \"Hemoglobin M\"[Mesh] OR \"hemoglobin\"[tiab])",
+  "c10": "(\"cortisol\"[tiab])",
+  "c11": "(\"Pediatrics\"[Mesh] OR \"Pediatric Emergency Medicine\"[Mesh] OR \"Intensive Care Units, Pediatric\"[Mesh] OR \"Hospitals, Pediatric\"[Mesh] OR \"pediatric\"[tiab])",
+  "c12": "(\"Adult Children\"[Mesh] OR \"children\"[tiab])",
+  "c13": "(\"Adolescent\"[Mesh] OR \"Adolescent Health\"[Mesh] OR \"Adolescent Medicine\"[Mesh] OR \"Adolescent Psychiatry\"[Mesh] OR \"National Longitudinal Study of Adolescent Health\"[Mesh] OR \"adolescent\"[tiab])",
+  "c14": "(\"teenager\"[tiab])"
+ },
+ "query": "(((\"resilience\"[tiab]) OR (\"protective mechanism\"[tiab])) AND (\"solid organ transplant patients\"[tiab]) AND ((\"C-Reactive Protein\"[Mesh] OR \"C-reactive protein\"[tiab]) OR (\"Serum Albumin\"[Mesh] OR \"Serum Albumin, Human\"[Mesh] OR \"albumin\"[tiab]) OR (\"Interleukin-6\"[Mesh] OR \"Receptors, Interleukin-6\"[Mesh] OR \"interleukin-6\"[tiab]) OR (\"neutrophil-to-lymphocyte ratio\"[tiab]) OR (\"Lymphocyte Count\"[Mesh] OR \"CD4 Lymphocyte Count\"[Mesh] OR \"lymphocyte count\"[tiab]) OR (\"Hemoglobin A\"[Mesh] OR \"Hemoglobin C\"[Mesh] OR \"Hemoglobin E\"[Mesh] OR \"Hemoglobin H\"[Mesh] OR \"Hemoglobin J\"[Mesh] OR \"Hemoglobin M\"[Mesh] OR \"hemoglobin\"[tiab]) OR (\"cortisol\"[tiab])) AND NOT ((\"Pediatrics\"[Mesh] OR \"Pediatric Emergency Medicine\"[Mesh] OR \"Intensive Care Units, Pediatric\"[Mesh] OR \"Hospitals, Pediatric\"[Mesh] OR \"pediatric\"[tiab]) OR (\"Adult Children\"[Mesh] OR \"children\"[tiab]) OR (\"Adolescent\"[Mesh] OR \"Adolescent Health\"[Mesh] OR \"Adolescent Medicine\"[Mesh] OR \"Adolescent Psychiatry\"[Mesh] OR \"National Longitudinal Study of Adolescent Health\"[Mesh] OR \"adolescent\"[tiab]) OR (\"teenager\"[tiab])))",
+ "counts": {
+  "resilience": 99149,
+  "protective mechanism": 8558,
+  "solid organ transplant patients": 682,
+  "C-reactive protein": 128540,
+  "albumin": 242763,
+  "interleukin-6": 128695,
+  "neutrophil-to-lymphocyte ratio": 15114,
+  "lymphocyte count": 57230,
+  "hemoglobin": 185173,
+  "cortisol": 80413,
+  "pediatric": 533810,
+  "children": 1483199,
+  "adolescent": 2501614,
+  "teenager": 4068,
+  "TOTAL": 0
+ }
+}

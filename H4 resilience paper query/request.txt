@@ -1,0 +1,7 @@
+I want papers that study ('resilience' or 'protective mechanism' or "disease resistance")
+for 'solid organ transplant patients'[313039003] 
+that report at least one of these laboratory measurements: 
+('C-reactive protein'[55235003] or 'albumin' [999997] 
+or 'interleukin-6' or 'neutrophil-to-lymphocyte ratio' 
+or 'lymphocyte count' or 'hemoglobin' or 'cortisol').
+Please exclude papers that study 'pediatric' or 'children' or 'adolescent' or 'teenager'.
